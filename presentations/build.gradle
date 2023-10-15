@@ -1,0 +1,8 @@
+plugins {
+    id 'java-library'
+    id 'helmo-common-conventions'
+}
+dependencies {
+    implementation project(':domains')
+    implementation project(path: ':domains')
+}
