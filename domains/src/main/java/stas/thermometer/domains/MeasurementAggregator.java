@@ -38,10 +38,9 @@ public class MeasurementAggregator implements TemperatureObserver {
             return null;
         }
 
-        double sum = 0;
-        for (Measurement measurement : measurements){
-            sum += measurement.temperature();
-        }
+        double sum = measurements.stream()
+                .mapToDouble(Measurement::temperature)
+                .sum();
 
         double average = sum / measurements.size();
 

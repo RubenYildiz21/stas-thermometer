@@ -64,7 +64,6 @@ public class App {
 
         // Associer le présentateur à la sonde et à l'agrégateur
         probe.addObserver(presenter);
-        //aggregator.addObserver(presenter);
         aggregator.addAverageObserver(presenter);
 
 

@@ -43,7 +43,7 @@ public class MeasurementAggregatorTest {
     @Test
     public void givenNoMeasurements_shouldReturnNullAverageMeasurement() {
         // Arrange
-        // (Nothing to do because no measurements are added)
+        //
 
         // Act
         Measurement result = aggregator.getAverageMeasurement();
