@@ -17,6 +17,6 @@ package stas.thermometer.domains;
  * @author Ruben Yildiz
  * @version 1.0
  */
-public record Configuration(String dateTimeFormat, String temperatureFormat, String thermometerName) implements ConfigurationInterface {
+public record Configuration(String dateTimeFormat, String temperatureFormat, String thermometerName)  {
 
 }

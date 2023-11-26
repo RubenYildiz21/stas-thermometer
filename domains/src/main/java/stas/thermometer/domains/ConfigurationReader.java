@@ -1,7 +1,5 @@
 package stas.thermometer.domains;
 
-import java.util.Map;
-
 /**
  * Interface pour lire la configuration liée aux profils de température.
  *
@@ -20,25 +18,9 @@ public interface ConfigurationReader {
     /**
      * Récupère le profil de température actuel.
      *
-     * @return le {@link TemperatureProfile} contenant les jalons de température.
+     * @return le {@link Profiles} contenant les jalons de température.
      */
-    TemperatureProfile getTemperatureProfile();
-
-    /**
-     * Récupère une valeur spécifique à partir d'une section et d'une clé de configuration.
-     *
-     * @param section la section dans la source de configuration.
-     * @param key la clé spécifique dans la section pour laquelle la valeur est requise.
-     * @return la valeur correspondant à la section et à la clé spécifiées.
-     */
-    String getValue(String section, String key);
-
-    /**
-     * Récupère toutes les sections disponibles dans la source de configuration.
-     *
-     * @return une Map contenant les noms des sections et une autre Map avec les paires clé-valeur de chaque section.
-     */
-    Map<String, Map<String, String>> getAllSections();
+    Profiles getProfile();
 
     /**
      * Récupère le format des dates utilisé dans les mesures et les logs.
@@ -60,5 +42,8 @@ public interface ConfigurationReader {
      * @return une chaîne représentant le nom du thermomètre.
      */
     String getThermometerName();
+
+    String[] getServerDbInfo();
+
 
 }

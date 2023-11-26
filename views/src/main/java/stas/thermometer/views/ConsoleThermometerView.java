@@ -18,6 +18,11 @@ public class ConsoleThermometerView implements ThermometerView {
         System.out.println(s);
     }
 
+    @Override
+    public void displayHumidity(String s) {
+        System.out.println(s);
+    }
+
     /**
      * Affiche le nom du thermomètre dans la console.
      *
@@ -42,12 +47,24 @@ public class ConsoleThermometerView implements ThermometerView {
      * Affiche une alerte concernant la température dans la console.
      *
      * @param alertType Le type d'alerte à afficher.
-     * @param expectedTemperature La température attendue au moment de l'alerte.
+     * @param expectedValue La température attendue au moment de l'alerte.
      * @param difference La différence de température qui a déclenché l'alerte.
      */
     @Override
-    public void displayAlert(String alertType, double expectedTemperature, double difference) {
-        System.out.printf("Alert : %s. Température attendue : %.2f°C, écart : %.2f°C\n", alertType, expectedTemperature, difference);
+    public void displayAlertTemperature(String alertType, double expectedValue, double difference) {
+        System.out.printf("Alert : %s. Température attendue : %.2f°C, écart : %.2f°C\n", alertType, expectedValue, difference);
+    }
+
+    /**
+     * Affiche une alerte concernant la température dans la console.
+     *
+     * @param alertType Le type d'alerte à afficher.
+     * @param expectedValue La température attendue au moment de l'alerte.
+     * @param difference La différence de température qui a déclenché l'alerte.
+     */
+    @Override
+    public void displayAlertHumidity(String alertType, double expectedValue, double difference) {
+        System.out.printf("Alert : %s. Humidité attendue : %.2f%%, écart : %.2f%%\n", alertType, expectedValue*100, difference*100);
     }
 
 }

@@ -3,4 +3,8 @@ plugins {
     id 'helmo-common-conventions'
 }
 
-
+dependencies {
+    testImplementation 'org.mockito:mockito-core:3.12.4'
+    testImplementation 'org.mockito:mockito-junit-jupiter:3.12.4'
+    testImplementation 'org.apache.derby:derby:10.16.1.1'
+}

@@ -13,7 +13,7 @@ import java.util.Locale;
  * @author Ruben Yildiz
  * @version 1.0
  */
-public record Measurement(double temperature, LocalDateTime timestamp) {
+public record Measurement(String thermometerName, double temperature, LocalDateTime timestamp) {
 
     /**
      * Formate un objet LocalDateTime en chaîne de caractères selon un format spécifié.

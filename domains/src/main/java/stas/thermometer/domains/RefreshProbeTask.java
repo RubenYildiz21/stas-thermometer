@@ -14,14 +14,15 @@ package stas.thermometer.domains;
 public class RefreshProbeTask implements Runnable {
 
     private final TemperatureProbe probe;
-
+    private final HumidityProbe humidityProbe;
     /**
      * Construit une nouvelle tâche de rafraîchissement pour la sonde spécifiée.
      *
      * @param probe la sonde de température à rafraîchir.
      */
-    public RefreshProbeTask(TemperatureProbe probe) {
+    public RefreshProbeTask(TemperatureProbe probe, HumidityProbe humidityProbe) {
         this.probe = probe;
+        this.humidityProbe = humidityProbe;
     }
 
     /**
@@ -33,6 +34,7 @@ public class RefreshProbeTask implements Runnable {
     @Override
     public void run() {
         probe.measureAndNotify();
+        humidityProbe.measureAndNotify();
     }
 }
 

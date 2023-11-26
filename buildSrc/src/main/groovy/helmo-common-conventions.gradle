@@ -7,16 +7,19 @@ plugins {
 repositories {
     mavenCentral()
 }
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 testing {
     suites {
         test {
             useJUnitJupiter('5.9.3')
         }
     }
-}
-
-dependencies {
-    implementation 'org.ini4j:ini4j:0.5.+'
 }
 
 pmd {

@@ -45,9 +45,8 @@ dependencies {
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.1.0'
     testImplementation 'org.mockito:mockito-core:3.12.4'
     testImplementation 'org.mockito:mockito-junit-jupiter:3.12.4'
-
-
-
+    implementation 'mysql:mysql-connector-java:8.0.33'
+    implementation 'org.apache.derby:derby:10.16.1.1'
 }
 
 testing {

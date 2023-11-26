@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 // Dépendances propres
 import java.io.*;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.concurrent.*;
 
@@ -31,67 +32,81 @@ public class App {
             return;
         }
         String resource = args[1];
+
         // Lecture du ficher de configuration
         InputStream inputStream = App.class.getClassLoader().getResourceAsStream(resource);
-
         if (inputStream == null) {
             LOG.error("Configuration file not found");
             return;
         }
 
         // Récuperer les info du thermometre
-        ConfigurationReader iniFileReader = new IniConfigurationReader(inputStream);
+        IniConfigurationReader iniFileReader = new IniConfigurationReader(inputStream);
         String thermometerName = iniFileReader.getThermometerName();
         if (thermometerName == null) {
             LOG.error("missing required property name");
             return;
         }
+
         // Initialisation du thermometre avec ses informations (nom, foramt de température et format de dateTime)
-        ConfigurationInterface config = new Configuration(iniFileReader.getDateTimeFormat(), iniFileReader.getTemperatureFormat(), thermometerName);
+        Configuration config = new Configuration(iniFileReader.getDateTimeFormat(), iniFileReader.getTemperatureFormat(), thermometerName);
 
         // Construction de mes objets
-
-        TemperatureProfile profile = iniFileReader.getTemperatureProfile();
+        ObserverManager observerManager = new ObserverManager();
+        Profiles profile = iniFileReader.getProfile();
         TemperatureProbe probe = new TemperatureProbe(profile);
-        MeasurementAggregator aggregator = new MeasurementAggregator();
+        HumidityProbe humidityProbe = new HumidityProbe(profile);
 
+        final String user = iniFileReader.getServerDbInfo()[1];
+        final String password = iniFileReader.getServerDbInfo()[2];
+        final String url = iniFileReader.getServerDbInfo()[0];
+        DatabaseManager<Measurement> measurementManager = new DatabaseManager<>(url, user, password);
+        DatabaseManager<Humidity> humidityManager = new DatabaseManager<>(url, user, password);
+        MeasurementAggregator aggregator = new MeasurementAggregator(observerManager, profile, thermometerName, measurementManager, humidityManager);
         // Ajouter l'agrégateur comme observateur de la sonde
         probe.addObserver(aggregator);
+        humidityProbe.addObserver(aggregator);
 
         // Créer le présentateur et la vue
         ThermometerView view = new ConsoleThermometerView();
-        ThermometerPresenter presenter = new ThermometerPresenter(view, aggregator, config, probe);
+        ThermometerPresenter presenter = new ThermometerPresenter();
+        presenter.setView(view);
+        presenter.setAggregator(aggregator);
+        presenter.setConfiguration(config);
+        presenter.setProbes(probe, humidityProbe);
 
         // Associer le présentateur à la sonde et à l'agrégateur
+        observerManager.addAverageObserver(presenter);
         probe.addObserver(presenter);
-        aggregator.addAverageObserver(presenter);
-
+        humidityProbe.addObserver(presenter);
+        observerManager.addAlertObserver(presenter);
 
         // Configurer et démarrer le rafraîchissement périodique de la sonde
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-        RefreshProbeTask refreshTask = new RefreshProbeTask(probe);
+        RefreshProbeTask refreshTask = new RefreshProbeTask(probe, humidityProbe);
         presenter.displayThermometerName();
         scheduledExecutor.scheduleAtFixedRate(refreshTask, 0, 100, TimeUnit.MILLISECONDS);
-        scheduledExecutor.scheduleAtFixedRate(aggregator::calculateAndNotifyAverage, 2, 2, TimeUnit.SECONDS);  // calcule la moyenne toutes les 2 secondes
+
+        scheduledExecutor.scheduleAtFixedRate(() -> {
+            if(!measurementManager.testConnection()){
+                view.display("stas thermometer : unable to insert data. trying to reconnect to database..");
+            }else {
+                if (aggregator.hasNewMeasurement()) {
+                    aggregator.calculateAndNotifyAverageTemperature();
+                    aggregator.calculateAndNotifyAverageHumidity();
+                }
+            }
 
 
+        }, 0, 2, TimeUnit.SECONDS);  // calcule la moyenne toutes les 2 secondes
 
         // Démarrer la boucle principale
         presenter.runMainLoop();
 
         // Arrêter l'exécuteur planifié
         scheduledExecutor.shutdown();
-
-
-        //TODO: faire collaborer la sonde avec la tâche de rafraichissement
-
-
     }
 
-
-
-    public Object getGreeting() {
-        return null;
-    }
 }
+
 

@@ -14,7 +14,7 @@ package stas.thermometer.domains;
 public interface AverageMeasurementObserver {
 
     /**
-     * Assure de notifier l'observateur qu'une nouvelle moyenne de temperature a
+     * Assure de notifier l'observateur qu'une nouvelle moyenne de value a
      * été calculée.
      *
      * @param averageMeasurement la nouvelle mesure moyenne de température.
@@ -22,5 +22,6 @@ public interface AverageMeasurementObserver {
      */
     void updateAverageMeasurement(Measurement averageMeasurement);
 
+    void updateAverageHumidity(Humidity averageHumidity);
 
 }

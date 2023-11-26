@@ -1,12 +1,9 @@
 package stas.thermometer.infrastructures;
 
-import stas.thermometer.domains.ConfigurationReader;
-import stas.thermometer.domains.TemperatureJalons;
-import stas.thermometer.domains.TemperatureProfile;
+import stas.thermometer.domains.*;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -22,6 +19,7 @@ import java.util.*;
 public class IniConfigurationReader implements ConfigurationReader {
 
     private final Map<String, Map<String, String>> sections = new HashMap<>();
+    private ProfileBuilder profileBuilder = null;
 
     /**
      * Constructeur de IniConfigurationReader.
@@ -31,6 +29,9 @@ public class IniConfigurationReader implements ConfigurationReader {
      */
     public IniConfigurationReader(InputStream inputStream) throws FileNotFoundException {
         parseFile(new Scanner(inputStream));
+        if(sections.isEmpty()){
+            return;
+        }
     }
 
     /**
@@ -42,46 +43,16 @@ public class IniConfigurationReader implements ConfigurationReader {
         String currentSection = "";
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine().trim();
-            if (isCommentOrEmpty(line)) {
+            if (line.isEmpty() || line.startsWith(";")) {
                 continue;
-            } else if (isNewSection(line)) {
-                currentSection = getSectionName(line);
+            } else if (line.startsWith("[") && line.endsWith("]")) {
+                currentSection = line.substring(1, line.length() - 1);
                 sections.put(currentSection, new HashMap<>());
             } else {
                 addKeyValuePair(currentSection, line);
             }
         }
         scanner.close();
-    }
-
-    /**
-     * Détermine si une ligne donnée est un commentaire ou une ligne vide.
-     *
-     * @param line la ligne à vérifier.
-     * @return true si la ligne est un commentaire ou vide, false sinon.
-     */
-    private boolean isCommentOrEmpty(String line) {
-        return line.isEmpty() || line.startsWith(";");
-    }
-
-    /**
-     * Vérifie si la ligne spécifiée débute une nouvelle section dans le fichier INI.
-     *
-     * @param line la ligne à vérifier.
-     * @return true si la ligne marque le début d'une nouvelle section, false sinon.
-     */
-    private boolean isNewSection(String line) {
-        return line.startsWith("[") && line.endsWith("]");
-    }
-
-    /**
-     * Extrait le nom de la section d'une ligne donnée.
-     *
-     * @param line la ligne contenant la section.
-     * @return le nom de la section.
-     */
-    private String getSectionName(String line) {
-        return line.substring(1, line.length() - 1);
     }
 
     /**
@@ -93,7 +64,7 @@ public class IniConfigurationReader implements ConfigurationReader {
     private void addKeyValuePair(String currentSection, String line) {
         String[] keyValue = line.split("=", 2);
         int nbKeyValue = 2;
-        if (keyValue.length == nbKeyValue) {
+        if (keyValue.length == nbKeyValue ) {
             String key = keyValue[0].trim();
             String value = keyValue[1].trim();
             Map<String, String> currentKeyValuePairs = sections.get(currentSection);
@@ -103,85 +74,13 @@ public class IniConfigurationReader implements ConfigurationReader {
         }
     }
 
-    /**
-     * Récupère le profil de température basé sur les configurations lues du fichier INI.
-     *
-     * @return un objet {@code TemperatureProfile} contenant les jalons de température.
-     */
     @Override
-    public TemperatureProfile getTemperatureProfile() {
-        Map<String, String> profileSection = sections.get("profile");
-        List<TemperatureJalons> jalons = new ArrayList<>();
-
-        Map<Integer, String> indexKeyMap = getIndexKeyMap(profileSection);
-        List<Integer> sortedIndices = getSortedIndices(indexKeyMap);
-
-        // Calculer l'intervalle de temps entre chaque jalon
-        int numberOfJalons = profileSection.size();
-        int hoursPerJalon = 24 / numberOfJalons; // Ceci suppose une répartition uniforme des jalons sur une période de 24 heures
-
-        for (Integer index : sortedIndices) {
-            String key = indexKeyMap.get(index);
-            TemperatureJalons jalon = createJalonFromIndexAndKey(index, key, profileSection, hoursPerJalon);
-            jalons.add(jalon);
+    public Profiles getProfile() {
+        if(profileBuilder == null) {
+            profileBuilder = new ProfileBuilder(sections);
         }
-
-        return new TemperatureProfile(jalons);
+        return profileBuilder.buildProfiles();
     }
-
-    /**
-     * Crée un objet {@code TemperatureJalons} à partir d'un index et d'une clé donnés.
-     *
-     * @param index l'index du jalon.
-     * @param key la clé correspondant à la température du jalon.
-     * @param profileSection la section du profil contenant les jalons.
-     * @param hoursPerJalon le nombre d'heures par jalon.
-     * @return un objet {@code TemperatureJalons}.
-     */
-    private TemperatureJalons createJalonFromIndexAndKey(Integer index, String key, Map<String, String> profileSection, int hoursPerJalon) {
-        // Calculer l'heure du jalon basée sur son index
-        int hourOfJalon = (index * hoursPerJalon) % 24;
-        // Récupérer la température du jalon
-        double temperature = Double.parseDouble(profileSection.get(key));
-        // Construire l'objet LocalDateTime pour le jalon
-        LocalDateTime timeOfJalon = LocalDateTime.now().withHour(hourOfJalon).withMinute(0).withSecond(0).withNano(0);
-        // Retourner le nouveau jalon
-        return new TemperatureJalons(timeOfJalon, temperature);
-    }
-
-    /**
-     * Récupère une liste d'indices triés à partir d'une Map d'indices et de clés.
-     *
-     * @param indexKeyMap la Map contenant les indices et les clés.
-     * @return une liste d'indices triés.
-     */
-    private List<Integer> getSortedIndices(Map<Integer, String> indexKeyMap) {
-        List<Integer> sortedIndices = new ArrayList<>(indexKeyMap.keySet());
-        Collections.sort(sortedIndices);
-        return sortedIndices;
-    }
-
-    /**
-     * Crée une Map d'indices et de clés à partir d'une section de profil.
-     *
-     * @param profileSection la section du profil.
-     * @return une Map d'indices et de clés.
-     */
-    private Map<Integer, String> getIndexKeyMap(Map<String, String> profileSection) {
-        Map<Integer, String> indexKeyMap = new HashMap<>();
-        for (String key : profileSection.keySet()) {
-            String indexString = key.replaceAll("[^0-9]", ""); // enlève tous les caractères non numériques
-            try {
-                int index = Integer.parseInt(indexString);
-                indexKeyMap.put(index, key);
-            } catch (NumberFormatException e) {
-                // Ignorer les clés qui ne contiennent pas un indice valide
-                e.printStackTrace();
-            }
-        }
-        return indexKeyMap;
-    }
-
 
     /**
      * Récupère une valeur spécifique de la configuration.
@@ -190,21 +89,11 @@ public class IniConfigurationReader implements ConfigurationReader {
      * @param key la clé de la configuration.
      * @return la valeur correspondante à la clé, ou null si elle n'existe pas.
      */
-    @Override
-    public String getValue(String section, String key){
+    private String getValue(String section, String key){
         Map<String, String> keyValue = sections.get(section);
         return keyValue != null ? keyValue.get(key) : null;
     }
 
-    /**
-     * Récupère toutes les sections de la configuration.
-     *
-     * @return une Map de toutes les sections, chacune étant une Map de clés et valeurs.
-     */
-    @Override
-    public Map<String, Map<String, String>> getAllSections(){
-        return sections;
-    }
 
     /**
      * Récupère le format de date et d'heure de la configuration.
@@ -223,7 +112,7 @@ public class IniConfigurationReader implements ConfigurationReader {
      */
     @Override
     public String getTemperatureFormat(){
-        return getValue("format", "temperature");
+        return getValue("format", "value");
     }
 
     /**
@@ -234,6 +123,16 @@ public class IniConfigurationReader implements ConfigurationReader {
     @Override
     public String getThermometerName(){
         return getValue("general", "name");
+    }
+
+    @Override
+    public String[] getServerDbInfo() {
+        return new String[]{
+                getValue("bd", "url"),
+                getValue("bd", "user"),
+                getValue("bd", "password"),
+                getValue("bd", "dbName")
+        };
     }
 
 }

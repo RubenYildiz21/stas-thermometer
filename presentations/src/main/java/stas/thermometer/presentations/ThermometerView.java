@@ -14,6 +14,13 @@ public interface ThermometerView {
     void displayTemperature(String s);
 
     /**
+     * Affiche l'humidité actuelle.
+     *
+     * @param s La chaîne représentant la température à afficher.
+     */
+    void displayHumidity(String s);
+
+    /**
      * Affiche le nom du thermomètre.
      *
      * @param s La chaîne représentant le nom du thermomètre à afficher.
@@ -34,5 +41,14 @@ public interface ThermometerView {
      * @param expectedTemperature La température attendue au moment de l'alerte.
      * @param difference La différence de température qui a déclenché l'alerte.
      */
-    void displayAlert(String alertType, double expectedTemperature, double difference);
+    void displayAlertTemperature(String alertType, double expectedTemperature, double difference);
+
+    /**
+     * Affiche une alerte concernant l'humidité.
+     *
+     * @param alertType Le type d'alerte à afficher.
+     * @param expectedValue La température attendue au moment de l'alerte.
+     * @param difference La différence de température qui a déclenché l'alerte.
+     */
+    void displayAlertHumidity(String alertType, double expectedValue, double difference);
 }
